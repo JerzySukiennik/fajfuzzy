@@ -6,6 +6,10 @@ pinned to the pretrain-v1 tag, so later work on main never touches a running sch
 
 Kaggle can drop a kernel source and still start the run, which would then train from
 random weights and quietly burn quota; EXPECT_RESUME turns that into a hard stop.
+
+Random windows from a cold /kaggle/input mount are slow: session 1 needed 76 minutes for
+its first 500 steps instead of 44. A background thread now reads the token file once,
+front to back, while training starts.
 """
 
 import glob
@@ -13,6 +17,8 @@ import os
 import shutil
 import subprocess
 import sys
+import threading
+import time
 
 REPO = "https://github.com/JerzySukiennik/fajfuzzy.git"
 TAG = "pretrain-v1"
@@ -29,6 +35,14 @@ os.chdir(SRC)
 def find(pattern):
     hits = sorted(glob.glob(f"/kaggle/input/**/{pattern}", recursive=True))
     return hits[0] if hits else None
+
+
+def warm(path):
+    t = time.time()
+    with open(path, "rb", buffering=0) as f:
+        while f.read(64 << 20):
+            pass
+    print(f"data read once in {time.time() - t:.0f} s", flush=True)
 
 
 data_train = find("decide_train.bin")
@@ -53,5 +67,6 @@ if resume:
 else:
     print("session 1: training from scratch", flush=True)
 
+threading.Thread(target=warm, args=(data_train,), daemon=True).start()
 subprocess.run(cmd, check=True, env={**os.environ, "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True"})
 print(f"checkpoint in {OUT}", flush=True)
