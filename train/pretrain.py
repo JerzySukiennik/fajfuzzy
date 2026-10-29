@@ -1,4 +1,4 @@
-"""Pretrain G-Decide's ELECTRA encoder, resumable across Kaggle sessions.
+"""Pretrain Fajfuzzy's ELECTRA encoder, resumable across Kaggle sessions.
 
 Every session restores weights, optimiser, loss scaler, step and RNG, and keeps the
 schedule frozen by session 1 (steps, warmup, learning rate, batch shape, context

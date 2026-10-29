@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run G-Decide's pretraining unattended: Kaggle sessions one after another, each resuming
+"""Run Fajfuzzy's pretraining unattended: Kaggle sessions one after another, each resuming
 the previous checkpoint, until the run reaches MAX_STEPS. Adapted from G-Dev's chain.
 
 The loop is stateless: every turn asks Kaggle what exists and derives the next move, so a
@@ -8,7 +8,7 @@ step counts. A session must end on its own (--max-hours) before the quota runs o
 because Kaggle refuses a cancelled kernel as the source of the next one. Every wait is
 capped at 30 minutes, since time.sleep does not count the Mac's sleep.
 
-    LaunchAgent fun.gzowo.g-decide.chain  (tools/chain-install.sh)
+    LaunchAgent fun.gzowo.fajfuzzy.chain  (tools/chain-install.sh)
     stop: touch tools/STOP
 """
 
@@ -21,13 +21,13 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 
-REPO = Path.home() / "Downloads/Claude/Projects/AIe/G-Decide"
+REPO = Path.home() / "Downloads/Claude/Projects/AIe/Fajfuzzy"
 KAGGLE = [str(Path.home() / "Downloads/Claude/Projects/AIe/G-Images/.venv/bin/python"), "-m", "kaggle"]
 CFG = Path.home() / ".kaggle-gdev"
 USER = (CFG / "username").read_text().strip()
 KAGGLE_ENV = {**os.environ, "KAGGLE_API_TOKEN": str(CFG / "access_token")}
 
-PREFIX, PREP = "gdec-s", "gdec-prep"
+PREFIX, PREP = "fajfuzzy-s", "gdec-prep"
 MAX_SESSION = 40
 MAX_STEPS = 36000
 STATE = REPO / "tools/state.json"
@@ -50,7 +50,7 @@ def log(msg):
 
 def notify(msg):
     log(f"POWIADOMIENIE: {msg}")
-    subprocess.run(["osascript", "-e", f'display notification "{msg}" with title "G-Decide"'], capture_output=True)
+    subprocess.run(["osascript", "-e", f'display notification "{msg}" with title "Fajfuzzy"'], capture_output=True)
 
 
 def load_state():
@@ -180,7 +180,7 @@ def finish(last_ok):
            r"(disc\.pt|tokenizer\.json|log\.jsonl)$", timeout=3600)
     disc = next(out.rglob("disc.pt"), None)
     DONE_FILE.write_text(f"session: {last_ok}\ndiscriminator: {disc}\n")
-    notify("G-Decide: pretraining skonczony" + ("" if disc else ", ale disc.pt sie nie pobral"))
+    notify("Fajfuzzy: pretraining skonczony" + ("" if disc else ", ale disc.pt sie nie pobral"))
 
 
 def main():

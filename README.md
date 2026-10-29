@@ -1,10 +1,13 @@
-# G-Decide
+# Fajfuzzy
 
 A small English decision model, trained from scratch on free Kaggle GPUs. You give it a
 state and a typed question (yes or no, one option from a list, or a point on a scale) and
 it answers with calibrated probabilities instead of text, in a single forward pass. Same
-idea as the new decision models such as Jev, at a hobby budget. Part of the G family of
-models.
+idea as the new decision models such as Jev, at a hobby budget. Made at Gzowo Labs, next
+to the from-scratch G models.
+
+The name: a *fajfus* is Polish for a cheeky little rascal, and fuzzy because it never
+answers with certainty, only with odds.
 
 **Status:** pretraining.
 

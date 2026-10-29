@@ -1,4 +1,4 @@
-"""G-Decide's encoder, trained from scratch with ELECTRA: a small generator fills masked
+"""Fajfuzzy's encoder, trained from scratch with ELECTRA: a small generator fills masked
 tokens, the discriminator spots which tokens were replaced.
 
 Pre-norm blocks with RoPE, GeGLU and no biases. The generator is a third of the

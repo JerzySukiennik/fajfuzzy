@@ -1,4 +1,4 @@
-"""Kaggle kernel (T4 x2): one pretraining session of G-Decide, resumed from the previous one.
+"""Kaggle kernel (T4 x2): one pretraining session of Fajfuzzy, resumed from the previous one.
 
 Pushed over and over by tools/chain.py. Kernel sources: gdec-prep (token binaries and
 tokenizer) and, from session 2 on, the previous session (run1/ckpt.pt). The code is
@@ -14,9 +14,9 @@ import shutil
 import subprocess
 import sys
 
-REPO = "https://github.com/JerzySukiennik/g-decide.git"
+REPO = "https://github.com/JerzySukiennik/fajfuzzy.git"
 TAG = "pretrain-v1"
-SRC = "/tmp/g-decide"
+SRC = "/tmp/fajfuzzy"
 OUT = "/kaggle/working/run1"
 
 SESSION_HOURS = 10.5

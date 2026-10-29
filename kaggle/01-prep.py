@@ -1,4 +1,4 @@
-"""Kaggle kernel (CPU, Internet on, no GPU quota): build G-Decide's tokenizer and token binaries.
+"""Kaggle kernel (CPU, Internet on, no GPU quota): build Fajfuzzy's tokenizer and token binaries.
 
 Four fetchers run in parallel because the network is the bottleneck. Text lands in /tmp,
 so the saved output holds only decide_train.bin, decide_val.bin, decide_counts.json and
@@ -10,10 +10,10 @@ import os
 import subprocess
 import sys
 
-REPO = "https://github.com/JerzySukiennik/g-decide.git"
+REPO = "https://github.com/JerzySukiennik/fajfuzzy.git"
 WORK = "/kaggle/working"
-TMP = "/tmp/gdec"
-SRC = f"{TMP}/g-decide"
+TMP = "/tmp/fajfuzzy"
+SRC = f"{TMP}/fajfuzzy"
 os.makedirs(TMP, exist_ok=True)
 
 subprocess.run(["git", "clone", "--depth", "1", REPO, SRC], check=True)

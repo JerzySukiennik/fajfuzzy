@@ -1,4 +1,4 @@
-"""Kaggle kernel (T4 x2, ~15 min): measure G-Decide's real pretraining throughput.
+"""Kaggle kernel (T4 x2, ~15 min): measure Fajfuzzy's real pretraining throughput.
 
 Runs the actual training step (DataParallel, fp16, generator plus discriminator) on random
 tokens at 512 and 2048 tokens of context for every micro-batch that fits, at the run's
@@ -10,8 +10,8 @@ import os
 import subprocess
 import sys
 
-REPO = "https://github.com/JerzySukiennik/g-decide.git"
-SRC = "/tmp/g-decide"
+REPO = "https://github.com/JerzySukiennik/fajfuzzy.git"
+SRC = "/tmp/fajfuzzy"
 TOKENS_PER_STEP = 131072
 
 subprocess.run(["git", "clone", "--depth", "1", REPO, SRC], check=True)

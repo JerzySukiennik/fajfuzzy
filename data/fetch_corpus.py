@@ -1,4 +1,4 @@
-"""Fetch G-Decide's English pretraining corpus into text files of documents.
+"""Fetch Fajfuzzy's English pretraining corpus into text files of documents.
 
   edu   HuggingFaceFW/fineweb-edu sample-10BT   educational prose, the core (ODC-By)
   web   HuggingFaceFW/fineweb sample-10BT       everyday web text: forums, shops, reviews (ODC-By)
@@ -10,7 +10,7 @@ which is far faster on Kaggle than streaming. Documents are separated by a line 
 only DOC_SEP, exact duplicates (ignoring whitespace) are dropped, and finished shards are
 recorded so a rerun resumes.
 
-    python data/fetch_corpus.py edu --out /tmp/gdec/corpus_edu.txt --max-chars 12e9
+    python data/fetch_corpus.py edu --out /tmp/fajfuzzy/corpus_edu.txt --max-chars 12e9
 """
 
 import argparse
@@ -44,7 +44,7 @@ def log(msg):
 
 
 def headers():
-    h = {"User-Agent": "g-decide-prep"}
+    h = {"User-Agent": "fajfuzzy-prep"}
     if os.environ.get("HF_TOKEN"):
         h["Authorization"] = f"Bearer {os.environ['HF_TOKEN']}"
     return h

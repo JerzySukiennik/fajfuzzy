@@ -1,4 +1,4 @@
-"""Train G-Decide's tokenizer: 32k byte-level BPE for English, every digit its own token.
+"""Train Fajfuzzy's tokenizer: 32k byte-level BPE for English, every digit its own token.
 
 The 32 special tokens come first (ids 0-31), so the model treats every id below 32 as
 structure: padding, CLS and SEP, the ELECTRA mask and the decision markers used later

@@ -1,4 +1,4 @@
-"""Tokenise G-Decide's corpora into flat uint16 binaries for random-window training.
+"""Tokenise Fajfuzzy's corpora into flat uint16 binaries for random-window training.
 
 Every document ends with <|sep|>. Every 500th document goes whole to validation, so no
 text leaks across the split. With --delete each corpus file is removed once packed,

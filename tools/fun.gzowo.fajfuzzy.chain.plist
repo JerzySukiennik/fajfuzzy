@@ -8,20 +8,20 @@
 		<false/>
 	</dict>
 	<key>Label</key>
-	<string>fun.gzowo.g-decide.chain</string>
+	<string>fun.gzowo.fajfuzzy.chain</string>
 	<key>ProgramArguments</key>
 	<array>
 		<string>/usr/bin/caffeinate</string>
 		<string>-s</string>
 		<string>/Users/jurek/Downloads/Claude/Projects/AIe/G-Micro/.venv/bin/python</string>
-		<string>/Users/jurek/Downloads/Claude/Projects/AIe/G-Decide/tools/chain.py</string>
+		<string>/Users/jurek/Downloads/Claude/Projects/AIe/Fajfuzzy/tools/chain.py</string>
 	</array>
 	<key>RunAtLoad</key>
 	<true/>
 	<key>StandardErrorPath</key>
-	<string>/Users/jurek/Library/Logs/g-decide-chain.log</string>
+	<string>/Users/jurek/Library/Logs/fajfuzzy-chain.log</string>
 	<key>StandardOutPath</key>
-	<string>/Users/jurek/Library/Logs/g-decide-chain.log</string>
+	<string>/Users/jurek/Library/Logs/fajfuzzy-chain.log</string>
 	<key>ThrottleInterval</key>
 	<integer>600</integer>
 </dict>
