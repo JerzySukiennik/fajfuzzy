@@ -6,7 +6,8 @@ The loop is stateless: every turn asks Kaggle what exists and derives the next m
 reboot loses nothing. tools/state.json only keeps the measured quota factor and cached
 step counts. A session must end on its own (--max-hours) before the quota runs out,
 because Kaggle refuses a cancelled kernel as the source of the next one. Every wait is
-capped at 30 minutes, since time.sleep does not count the Mac's sleep.
+capped at 30 minutes, since time.sleep does not count the Mac's sleep. Nothing starts
+until the prep kernel has finished, so the chain can be installed while prep still runs.
 
     LaunchAgent fun.gzowo.fajfuzzy.chain  (tools/chain-install.sh)
     stop: touch tools/STOP
@@ -35,7 +36,11 @@ STOP_FILE = REPO / "tools/STOP"
 DONE_FILE = REPO / "tools/DONE"
 TMP = REPO / "Niepotrzebne/chain-tmp"
 
+BUSY = ("RUNNING", "QUEUED", "NEW_SCRIPT", "CANCEL_REQUESTED")
+FAILED = ("ERROR", "CANCEL_ACKNOWLEDGED")
+
 POLL = 900
+PREP_POLL = 300
 WAIT_CAP = 1800
 RETRY_WAIT = 1800
 MAX_FAILS = 4
@@ -191,12 +196,21 @@ def main():
         if STOP_FILE.exists():
             log("STOP found, exiting")
             return 0
-        top = min(max(4, st.get("top", 0) + 3), MAX_SESSION)
+        prep = status(PREP)
+        if prep in FAILED:
+            notify(f"{PREP} skonczyl sie statusem {prep}, lancuch zatrzymany")
+            STOP_FILE.touch()
+            return 0
+        if prep != "COMPLETE":
+            log(f"waiting for {PREP} ({prep})")
+            time.sleep(PREP_POLL)
+            continue
+        top =min(max(4, st.get("top", 0) + 3), MAX_SESSION)
         sess = {n: status(f"{PREFIX}{n}") for n in range(1, top + 1)}
         existing = [n for n, s in sess.items() if s != "NONE"]
         st["top"] = max(existing, default=0)
         calibrate(st, sess)
-        if any(s in ("RUNNING", "QUEUED") for s in sess.values()):
+        if any(s in BUSY for s in sess.values()):
             time.sleep(POLL)
             continue
 
@@ -213,7 +227,7 @@ def main():
                 return 0
 
         base = max(done, default=0)
-        fails = sum(1 for n, s in sess.items() if n > max(base, ignore) and s in ("ERROR", "CANCEL", "CANCELACKNOWLEDGED"))
+        fails = sum(1 for n, s in sess.items() if n > max(base, ignore) and s in FAILED)
         if fails >= MAX_FAILS:
             q = quota()
             wait = until_refresh(q) if q else 6 * 3600
