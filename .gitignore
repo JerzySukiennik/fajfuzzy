@@ -1,0 +1,11 @@
+.env
+__pycache__/
+*.pt
+*.bin
+checkpoints/
+Niepotrzebne/
+.venv/
+.DS_Store
+tools/state.json
+tools/STOP
+tools/DONE
