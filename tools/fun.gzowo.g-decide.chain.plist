@@ -11,6 +11,8 @@
 	<string>fun.gzowo.g-decide.chain</string>
 	<key>ProgramArguments</key>
 	<array>
+		<string>/usr/bin/caffeinate</string>
+		<string>-s</string>
 		<string>/Users/jurek/Downloads/Claude/Projects/AIe/G-Micro/.venv/bin/python</string>
 		<string>/Users/jurek/Downloads/Claude/Projects/AIe/G-Decide/tools/chain.py</string>
 	</array>

@@ -53,5 +53,5 @@ if resume:
 else:
     print("session 1: training from scratch", flush=True)
 
-subprocess.run(cmd, check=True)
+subprocess.run(cmd, check=True, env={**os.environ, "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True"})
 print(f"checkpoint in {OUT}", flush=True)

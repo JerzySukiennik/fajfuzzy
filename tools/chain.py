@@ -29,7 +29,7 @@ KAGGLE_ENV = {**os.environ, "KAGGLE_API_TOKEN": str(CFG / "access_token")}
 
 PREFIX, PREP = "gdec-s", "gdec-prep"
 MAX_SESSION = 40
-MAX_STEPS = 34000
+MAX_STEPS = 36000
 STATE = REPO / "tools/state.json"
 STOP_FILE = REPO / "tools/STOP"
 DONE_FILE = REPO / "tools/DONE"
@@ -205,6 +205,12 @@ def main():
         if last_ok and (last_step(last_ok, st) or 0) >= MAX_STEPS:
             finish(last_ok)
             return 0
+        if len(done) >= 2:
+            prev_ok = f"{PREFIX}{sorted(done)[-2]}"
+            if (last_step(last_ok, st) or 0) <= (last_step(prev_ok, st) or 0):
+                notify(f"{last_ok} nie posunal treningu dalej niz {prev_ok}, lancuch zatrzymany")
+                STOP_FILE.touch()
+                return 0
 
         base = max(done, default=0)
         fails = sum(1 for n, s in sess.items() if n > max(base, ignore) and s in ("ERROR", "CANCEL", "CANCELACKNOWLEDGED"))

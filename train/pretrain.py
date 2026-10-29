@@ -115,7 +115,7 @@ def main():
     ap.add_argument("--random-data", action="store_true")
     ap.add_argument("--out", type=Path, default=Path("checkpoints/run1"))
     ap.add_argument("--resume", action="store_true")
-    ap.add_argument("--max-steps", type=int, default=34000)
+    ap.add_argument("--max-steps", type=int, default=36000)
     ap.add_argument("--warmup", type=int, default=1500)
     ap.add_argument("--lr", type=float, default=5e-4)
     ap.add_argument("--min-lr", type=float, default=5e-5)
@@ -207,6 +207,7 @@ def main():
     started = time.time()
     t0, tok0 = time.time(), tokens
     timed_from = None
+    ooms = 0
     if device == "cuda":
         torch.cuda.reset_peak_memory_stats()
 
@@ -221,16 +222,36 @@ def main():
 
         opt.zero_grad(set_to_none=True)
         stats = torch.zeros(len(STATS), device=device)
-        for _ in range(accum):
-            x = data.batch(size, device)
-            with ctx:
-                out = model(x).float().mean(0)
-            scaler.scale(out[0] / accum).backward()
-            stats += out.detach() / accum
-        scaler.unscale_(opt)
-        grad_norm = torch.nn.utils.clip_grad_norm_(model.parameters(), args.grad_clip)
-        scaler.step(opt)
-        scaler.update()
+        unscaled = False
+        try:
+            for _ in range(accum):
+                x = data.batch(size, device)
+                with ctx:
+                    out = model(x).float().mean(0)
+                scaler.scale(out[0] / accum).backward()
+                stats += out.detach() / accum
+            scaler.unscale_(opt)
+            unscaled = True
+            grad_norm = torch.nn.utils.clip_grad_norm_(model.parameters(), args.grad_clip)
+            scaler.step(opt)
+            scaler.update()
+        except RuntimeError as e:
+            if "out of memory" not in str(e).lower():
+                raise
+            if unscaled:
+                scaler.update()
+            opt.zero_grad(set_to_none=True)
+            out = x = None
+            torch.cuda.empty_cache()
+            ooms += 1
+            log({"step": step, "event": "oom", "count": ooms})
+            print(f"out of memory at step {step} ({ooms} this session), step skipped", flush=True)
+            if ooms >= 5:
+                save(ckpt_path, model, opt, scaler, step, tokens, cfg, args)
+                log({"step": step, "event": "oom_stop", "tokens": tokens})
+                print("too many out-of-memory errors, saved and ending the session cleanly", flush=True)
+                return
+            continue
         step += 1
         tokens += size * accum * block
 
