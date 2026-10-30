@@ -52,7 +52,11 @@ class Model:
         ck = torch.load(str(ckpt), map_location="cpu", weights_only=False, mmap=True)
         self.cfg = Config(**ck["config"])
         self.net = Electra(self.cfg).eval()
-        self.net.load_state_dict(ck["model"])
+        self.has_gen = "model" in ck
+        if self.has_gen:
+            self.net.load_state_dict(ck["model"])
+        else:
+            self.net.load_state_dict({k: v.float() for k, v in ck["weights"].items()}, strict=False)
         self.step, self.tokens = ck["step"], ck.get("tokens", 0)
         self.tok = Tokenizer.from_file(str(tok_path))
         bm = byte_map()
@@ -318,6 +322,8 @@ def main():
 
     t0 = time.time()
     m = Model(a.ckpt, a.prep / "tokenizer.json", a.threads)
+    if not m.has_gen:
+        raise SystemExit("the demo page needs a full training checkpoint (ckpt.pt): disc.pt has no generator")
     val = np.memmap(a.prep / "decide_val.bin", dtype=np.uint16, mode="r")
     docs = documents(val, m.cfg.sep_id)
 
