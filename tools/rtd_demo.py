@@ -182,6 +182,9 @@ def mixup_row(c):
     t, s = c["target"], c["target"]["start"]
     sent = next(m for m in SENTENCE.finditer(c["text"]) if m.start() <= s < m.end())
     a = sent.start() + len(sent.group(0)) - len(sent.group(0).lstrip())
+    if not re.match(r"[A-Z0-9\"“]", c["text"][a:]) or re.match(r"\d+\)", c["text"][a:]):
+        nxt = re.search(r"[A-Z\"“]", c["text"][a:s])
+        a += nxt.start() if nxt else 0
     ws = [w for w in c["words"] if a <= w["start"] and w["end"] <= sent.end()]
     for w in ws:
         if w is t:
