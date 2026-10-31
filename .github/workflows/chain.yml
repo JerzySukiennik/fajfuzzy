@@ -1,4 +1,4 @@
-# Fajfuzzy pretraining chain in the cloud: one turn of tools/chain.py every 15 minutes, state on the chain-state branch.
+# Fajfuzzy pretraining chain in the cloud: one turn of tools/chain.py every 15 minutes, state on the chain-state branch; while the cron stalls, each run dispatches the next.
 name: chain
 
 on:
@@ -54,3 +54,15 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           if [ -e state/DONE ] || [ -e state/STOP ]; then gh workflow disable chain.yml --repo "$GITHUB_REPOSITORY"; fi
+      - name: Next turn if the schedule stalls
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ -e state/DONE ] || [ -e state/STOP ]; then exit 0; fi
+          last=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow chain.yml --event schedule --limit 1 --json createdAt --jq '.[0].createdAt // empty')
+          if [ -z "$last" ] || [ $(( $(date +%s) - $(date -d "$last" +%s) )) -gt 2700 ]; then
+            echo "no scheduled run for 45 min, dispatching the next turn in 10 min"
+            sleep 600
+            gh workflow run chain.yml --repo "$GITHUB_REPOSITORY"
+          fi
