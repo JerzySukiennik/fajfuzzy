@@ -2,18 +2,21 @@
 """Run Fajfuzzy's pretraining unattended: Kaggle sessions one after another, each resuming
 the previous checkpoint, until the run reaches MAX_STEPS. Adapted from G-Dev's chain.
 
-The loop is stateless: every turn asks Kaggle what exists and derives the next move, so a
-reboot loses nothing. tools/state.json only keeps the measured quota factor and cached
-step counts. A session must end on its own (--max-hours) before the quota runs out,
-because Kaggle refuses a cancelled kernel as the source of the next one. Every wait is
-capped at 30 minutes and runs as one-minute naps against the wall clock, because
-time.sleep does not count the Mac's sleep: after a wake the chain acts within a minute.
-Nothing starts until the prep kernel has finished, so the chain can be installed early.
+Every turn asks Kaggle what exists and derives the next move, so a restart loses nothing;
+the state file only keeps the measured quota factor and cached step counts. A session must
+end on its own (--max-hours) before the quota runs out, because Kaggle refuses a cancelled
+kernel as the source of the next one. Nothing starts until the prep kernel has finished.
 
-    LaunchAgent fun.gzowo.fajfuzzy.chain  (tools/chain-install.sh)
-    stop: touch tools/STOP
+In the cloud, .github/workflows/chain.yml runs one turn (--once) every 15 minutes and keeps
+state.json, chain.log, STOP and DONE on the chain-state branch, so the Mac may sleep. The
+local loop (LaunchAgent via tools/chain-install.sh) still works: its waits are one-minute
+naps against the wall clock, because time.sleep does not count the Mac's sleep.
+
+    python tools/chain.py --once --state state/state.json
+    stop: a STOP file next to the state file, or disable the workflow
 """
 
+import argparse
 import json
 import os
 import re
@@ -23,8 +26,9 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 
-REPO = Path.home() / "Downloads/Claude/Projects/AIe/Fajfuzzy"
-KAGGLE = [str(Path.home() / "Downloads/Claude/Projects/AIe/G-Images/.venv/bin/python"), "-m", "kaggle"]
+REPO = Path(__file__).resolve().parents[1]
+VENV = Path.home() / "Downloads/Claude/Projects/AIe/G-Images/.venv/bin/python"
+KAGGLE = [str(VENV) if VENV.exists() else sys.executable, "-m", "kaggle"]
 CFG = Path.home() / ".kaggle-gdev"
 USER = (CFG / "username").read_text().strip()
 KAGGLE_ENV = {**os.environ, "KAGGLE_API_TOKEN": str(CFG / "access_token")}
@@ -33,9 +37,11 @@ PREFIX, PREP = "fajfuzzy-s", "gdec-prep"
 MAX_SESSION = 40
 MAX_STEPS = 36000
 STATE = REPO / "tools/state.json"
-STOP_FILE = REPO / "tools/STOP"
-DONE_FILE = REPO / "tools/DONE"
+STOP_FILE = STATE.parent / "STOP"
+DONE_FILE = STATE.parent / "DONE"
 TMP = REPO / "Niepotrzebne/chain-tmp"
+ONCE = False
+NOTIFIED = False
 
 BUSY = ("RUNNING", "QUEUED", "NEW_SCRIPT", "CANCEL_REQUESTED")
 FAILED = ("ERROR", "CANCEL_ACKNOWLEDGED")
@@ -50,19 +56,32 @@ SETUP_MARGIN = 0.6
 MIN_USEFUL = 0.8
 
 
+class Pause(Exception):
+    pass
+
+
 def log(msg):
-    print(f"[{datetime.now():%F %H:%M}] {msg}", flush=True)
+    line = f"[{datetime.now():%F %H:%M}] {msg}"
+    print(line, flush=True)
+    if ONCE:
+        with (STATE.parent / "chain.log").open("a") as f:
+            f.write(line + "\n")
 
 
 def nap(seconds):
+    if ONCE:
+        raise Pause
     end = time.time() + seconds
     while time.time() < end:
         time.sleep(min(60, max(1, end - time.time())))
 
 
 def notify(msg):
+    global NOTIFIED
+    NOTIFIED = True
     log(f"POWIADOMIENIE: {msg}")
-    subprocess.run(["osascript", "-e", f'display notification "{msg}" with title "Fajfuzzy"'], capture_output=True)
+    if sys.platform == "darwin":
+        subprocess.run(["osascript", "-e", f'display notification "{msg}" with title "Fajfuzzy"'], capture_output=True)
 
 
 def load_state():
@@ -133,7 +152,10 @@ def push_kernel(name, code_file, sources, replace):
 def launch(prev, nxt, st):
     hours = session_hours(st["factor"])
     if hours == 0.0:
-        log(f"quota nearly gone, not starting {nxt}")
+        if not ONCE or st.get("idle") != nxt:
+            log(f"quota nearly gone, not starting {nxt}")
+        st["idle"] = nxt
+        save_state(st)
         return 2
     q = quota()
     rc = push_kernel(nxt, "kaggle/02-pretrain.py", [f"{USER}/{PREP}"] + ([f"{USER}/{prev}"] if prev else []),
@@ -142,6 +164,7 @@ def launch(prev, nxt, st):
     if rc == 0:
         log(f"{nxt} gets {hours} h (quota factor {st['factor']:.2f})")
         st["launch"] = {"name": nxt, "hours": hours, "used": q[0] if q else None, "ts": time.time(), "measured": False}
+        st.pop("idle", None)
         save_state(st)
     return rc
 
@@ -185,6 +208,10 @@ def last_step(name, st):
 
 
 def finish(last_ok):
+    if ONCE:
+        DONE_FILE.write_text(f"session: {last_ok}\n")
+        log(f"pretraining finished in {last_ok}, disc.pt is in its output")
+        return
     out = REPO / "Niepotrzebne/pretrain-final"
     out.mkdir(parents=True, exist_ok=True)
     log("pretraining finished, downloading the discriminator")
@@ -195,29 +222,28 @@ def finish(last_ok):
     notify("Fajfuzzy: pretraining skonczony" + ("" if disc else ", ale disc.pt sie nie pobral"))
 
 
-def main():
-    st = load_state()
-    log("chain started")
+def run(st):
     ignore = st.get("ignore", 0)
     while True:
-        if STOP_FILE.exists():
-            log("STOP found, exiting")
-            return 0
+        if STOP_FILE.exists() or DONE_FILE.exists():
+            print(f"{'STOP' if STOP_FILE.exists() else 'DONE'} found, exiting", flush=True)
+            return
         prep = status(PREP)
         if prep in FAILED:
             notify(f"{PREP} skonczyl sie statusem {prep}, lancuch zatrzymany")
             STOP_FILE.touch()
-            return 0
+            return
         if prep != "COMPLETE":
-            log(f"waiting for {PREP} ({prep})")
+            print(f"waiting for {PREP} ({prep})", flush=True)
             nap(PREP_POLL)
             continue
-        top =min(max(4, st.get("top", 0) + 3), MAX_SESSION)
+        top = min(max(4, st.get("top", 0) + 3), MAX_SESSION)
         sess = {n: status(f"{PREFIX}{n}") for n in range(1, top + 1)}
         existing = [n for n, s in sess.items() if s != "NONE"]
         st["top"] = max(existing, default=0)
         calibrate(st, sess)
         if any(s in BUSY for s in sess.values()):
+            print("busy: " + ", ".join(f"{PREFIX}{n} {s}" for n, s in sess.items() if s in BUSY), flush=True)
             nap(POLL)
             continue
 
@@ -225,13 +251,13 @@ def main():
         last_ok = f"{PREFIX}{max(done)}" if done else None
         if last_ok and (last_step(last_ok, st) or 0) >= MAX_STEPS:
             finish(last_ok)
-            return 0
+            return
         if len(done) >= 2:
             prev_ok = f"{PREFIX}{sorted(done)[-2]}"
             if (last_step(last_ok, st) or 0) <= (last_step(prev_ok, st) or 0):
                 notify(f"{last_ok} nie posunal treningu dalej niz {prev_ok}, lancuch zatrzymany")
                 STOP_FILE.touch()
-                return 0
+                return
 
         base = max(done, default=0)
         fails = sum(1 for n, s in sess.items() if n > max(base, ignore) and s in FAILED)
@@ -259,6 +285,24 @@ def main():
             nap(600)
         else:
             nap(RETRY_WAIT)
+
+
+def main():
+    global ONCE, STATE, STOP_FILE, DONE_FILE
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--once", action="store_true", help="run one turn and exit (cloud workflow)")
+    ap.add_argument("--state", type=Path, default=STATE)
+    a = ap.parse_args()
+    ONCE, STATE = a.once, a.state
+    STOP_FILE, DONE_FILE = STATE.parent / "STOP", STATE.parent / "DONE"
+    st = load_state()
+    if not ONCE:
+        log("chain started")
+    try:
+        run(st)
+    except Pause:
+        pass
+    return 1 if ONCE and NOTIFIED else 0
 
 
 if __name__ == "__main__":
