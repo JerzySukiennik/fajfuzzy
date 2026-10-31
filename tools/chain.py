@@ -6,8 +6,9 @@ The loop is stateless: every turn asks Kaggle what exists and derives the next m
 reboot loses nothing. tools/state.json only keeps the measured quota factor and cached
 step counts. A session must end on its own (--max-hours) before the quota runs out,
 because Kaggle refuses a cancelled kernel as the source of the next one. Every wait is
-capped at 30 minutes, since time.sleep does not count the Mac's sleep. Nothing starts
-until the prep kernel has finished, so the chain can be installed while prep still runs.
+capped at 30 minutes and runs as one-minute naps against the wall clock, because
+time.sleep does not count the Mac's sleep: after a wake the chain acts within a minute.
+Nothing starts until the prep kernel has finished, so the chain can be installed early.
 
     LaunchAgent fun.gzowo.fajfuzzy.chain  (tools/chain-install.sh)
     stop: touch tools/STOP
@@ -51,6 +52,12 @@ MIN_USEFUL = 0.8
 
 def log(msg):
     print(f"[{datetime.now():%F %H:%M}] {msg}", flush=True)
+
+
+def nap(seconds):
+    end = time.time() + seconds
+    while time.time() < end:
+        time.sleep(min(60, max(1, end - time.time())))
 
 
 def notify(msg):
@@ -203,7 +210,7 @@ def main():
             return 0
         if prep != "COMPLETE":
             log(f"waiting for {PREP} ({prep})")
-            time.sleep(PREP_POLL)
+            nap(PREP_POLL)
             continue
         top =min(max(4, st.get("top", 0) + 3), MAX_SESSION)
         sess = {n: status(f"{PREFIX}{n}") for n in range(1, top + 1)}
@@ -211,7 +218,7 @@ def main():
         st["top"] = max(existing, default=0)
         calibrate(st, sess)
         if any(s in BUSY for s in sess.values()):
-            time.sleep(POLL)
+            nap(POLL)
             continue
 
         done = [n for n, s in sess.items() if s == "COMPLETE"]
@@ -234,24 +241,24 @@ def main():
             notify(f"{fails} nieudane starty z rzedu, ponawiam po odnowieniu quoty (za {wait / 3600:.1f} h)")
             ignore = st["ignore"] = st["top"]
             save_state(st)
-            time.sleep(min(wait, WAIT_CAP))
+            nap(min(wait, WAIT_CAP))
             continue
         if fails:
             left = RETRY_WAIT - (time.time() - st.get("launch", {}).get("ts", 0))
             if left > 0:
-                time.sleep(min(left, WAIT_CAP))
+                nap(min(left, WAIT_CAP))
                 continue
 
         rc = launch(last_ok, f"{PREFIX}{max(existing, default=0) + 1}", st)
         if rc == 0:
-            time.sleep(180)
+            nap(180)
         elif rc == 2:
             q = quota()
-            time.sleep(min(until_refresh(q) if q else 3600, WAIT_CAP))
+            nap(min(until_refresh(q) if q else 3600, WAIT_CAP))
         elif rc == 3:
-            time.sleep(600)
+            nap(600)
         else:
-            time.sleep(RETRY_WAIT)
+            nap(RETRY_WAIT)
 
 
 if __name__ == "__main__":
