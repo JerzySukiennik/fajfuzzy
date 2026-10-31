@@ -1,0 +1,36 @@
+[2026-10-29 10:46] chain started
+[2026-10-29 10:46] waiting for gdec-prep (RUNNING)
+[2026-10-29 10:51] waiting for gdec-prep (RUNNING)
+[2026-10-29 10:56] waiting for gdec-prep (RUNNING)
+[2026-10-29 11:01] waiting for gdec-prep (RUNNING)
+[2026-10-29 11:06] waiting for gdec-prep (RUNNING)
+[2026-10-29 11:11] waiting for gdec-prep (RUNNING)
+[2026-10-29 11:16] waiting for gdec-prep (RUNNING)
+[2026-10-29 11:21] waiting for gdec-prep (RUNNING)
+[2026-10-29 11:26] waiting for gdec-prep (RUNNING)
+[2026-10-29 11:31] waiting for gdec-prep (RUNNING)
+[2026-10-29 11:36] waiting for gdec-prep (RUNNING)
+[2026-10-29 11:41] waiting for gdec-prep (RUNNING)
+[2026-10-29 11:46] waiting for gdec-prep (RUNNING)
+[2026-10-29 11:51] waiting for gdec-prep (RUNNING)
+[2026-10-29 11:56] waiting for gdec-prep (RUNNING)
+[2026-10-29 12:01] waiting for gdec-prep (RUNNING)
+[2026-10-29 12:06] waiting for gdec-prep (RUNNING)
+[2026-10-29 12:11] push fajfuzzy-s1: Kernel version 1 successfully pushed.  Please check progress at https://www.kaggle.com/code/jerzysukienik/fajfuzzy-s1
+[2026-10-29 12:11] fajfuzzy-s1 gets 11.0 h (quota factor 1.05)
+[2026-10-29 23:17] fajfuzzy-s1: used 11.01 h of quota for a 11.0 h session -> factor 1.03
+[2026-10-29 23:17] fajfuzzy-s1 ended at step 7118/36000
+[2026-10-29 23:17] push fajfuzzy-s2: Kernel version 1 successfully pushed.  Please check progress at https://www.kaggle.com/code/jerzysukienik/fajfuzzy-s2
+[2026-10-29 23:17] fajfuzzy-s2 gets 11.0 h (quota factor 1.03)
+[2026-10-30 08:38] chain started
+[2026-10-30 10:45] fajfuzzy-s2: used 11.01 h of quota for a 11.0 h session -> factor 1.03
+[2026-10-30 10:45] fajfuzzy-s2 ended at step 14775/36000
+[2026-10-30 10:45] push fajfuzzy-s3: Kernel version 1 successfully pushed.  Please check progress at https://www.kaggle.com/code/jerzysukienik/fajfuzzy-s3
+[2026-10-30 10:45] fajfuzzy-s3 gets 7.2 h (quota factor 1.03)
+[2026-10-30 20:32] waiting for gdec-prep (NONE)
+[2026-10-30 23:22] fajfuzzy-s3: used 7.22 h of quota for a 7.2 h session -> factor 1.02
+[2026-10-30 23:22] fajfuzzy-s3 ended at step 19509/36000
+[2026-10-30 23:22] quota nearly gone, not starting fajfuzzy-s4
+[2026-10-31 11:14] chain started
+[2026-10-31 11:15] push fajfuzzy-s4: Kernel version 1 successfully pushed.  Please check progress at https://www.kaggle.com/code/jerzysukienik/fajfuzzy-s4
+[2026-10-31 11:15] fajfuzzy-s4 gets 11.0 h (quota factor 1.02)
