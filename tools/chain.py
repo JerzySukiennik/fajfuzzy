@@ -104,7 +104,10 @@ def kaggle(*args, timeout=300):
 
 
 def status(name):
-    m = re.search(r"KernelWorkerStatus\.(\w+)", kaggle("kernels", "status", f"{USER}/{name}"))
+    out = kaggle("kernels", "status", f"{USER}/{name}")
+    m = re.search(r"KernelWorkerStatus\.(\w+)", out)
+    if not m:
+        print(f"status {name}: " + " | ".join(l for l in out.splitlines() if "outdated" not in l)[:300], flush=True)
     return m.group(1) if m else "NONE"
 
 
