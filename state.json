@@ -1,17 +1,18 @@
 {
  "factor": 1.03,
- "top": 4,
+ "top": 5,
  "launch": {
-  "name": "fajfuzzy-s5",
-  "hours": 11.0,
-  "used": 11.01,
-  "ts": 1793488589.0581918,
+  "name": "fajfuzzy-s6",
+  "hours": 7.2,
+  "used": 22.03,
+  "ts": 1793531055.0454452,
   "measured": false
  },
  "steps": {
   "fajfuzzy-s1": 7118,
   "fajfuzzy-s2": 14775,
   "fajfuzzy-s3": 19509,
-  "fajfuzzy-s4": 28152
+  "fajfuzzy-s4": 28152,
+  "fajfuzzy-s5": 35052
  }
 }
