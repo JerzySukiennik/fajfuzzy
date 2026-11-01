@@ -4,10 +4,11 @@ Serves the demo report page with a "try it yourself" box and answers POST /score
 input is scored between two real validation documents, so it sits in a full window the way
 the model saw text in pretraining. Two CPU threads, idle between requests, keep the Mac quiet.
 
-    python tools/rtd_server.py --ckpt disc.pt --prep prep --page fajfuzzy-podmiany-s2.html --port 8858
+    python tools/rtd_server.py --ckpt disc.pt --prep prep --page fajfuzzy-podmiany-s5.html --port 8858
 """
 
 import argparse
+import html
 import json
 import sys
 import threading
@@ -28,9 +29,25 @@ FOOTER = ("Na pojedynczych, krótkich zdaniach jeszcze nie działa: w pretrainin
           "Model zna z pretrainingu tylko długie okna tekstu, więc tekst z pola „Sprawdź sam” serwer wkłada między "
           "dwa prawdziwe akapity z walidacji. Bez tego na pojedynczym zdaniu nic by nie zaznaczył.")
 
+GUIDE = [
+    ("Czysty tekst", "Prawdziwe zdanie bez błędu.", "Prawie nic nie świeci, żadne słowo nie przekracza ok. 30%.",
+     "The printer finished the part in three hours, so we could test it before dinner."),
+    ("Homofon", "Słowo, które brzmi tak samo: would → wood, buy → by, three → tree.",
+     "Podmienione słowo stoi pierwsze na liście najbardziej podejrzanych.",
+     "The printer finished the part in tree hours, so we could test it before dinner."),
+    ("Słowo nie z tej bajki", "Prawdziwe słowo, ale bez sensu w tym miejscu.",
+     "Świeci mocno, bo model wie, co zwykle stoi w takim zdaniu.",
+     "After school she drank a cup of hot bread and started her homework."),
+    ("Zły fakt", "Zdanie poprawne językowo, tylko nieprawdziwe.",
+     "Czasem złapie, czasem nie: model zna statystykę tekstu, nie encyklopedię.",
+     "Paris is the capital of Germany and lies on the river Seine."),
+    ("Przed i po", "Twoje własne zdanie: sprawdź czyste, podmień jedno słowo, sprawdź znowu.",
+     "Liczy się różnica: podmienione słowo wyskakuje ponad resztę.", ""),
+]
+
 BOX = """<section class="try">
 <h2>Sprawdź sam</h2>
-<p class="intro">Wpisz albo wklej tekst po angielsku. Fajfuzzy zaznaczy słowa, które jego zdaniem ktoś podmienił. Najlepiej łapie pomyłki typu „wood” zamiast „would”, a „lunched” zamiast „launched” jeszcze mu umyka.</p>
+<p class="intro">Wpisz albo wklej tekst po angielsku i kliknij Sprawdź (albo Enter). Fajfuzzy zaznaczy na bursztynowo słowa, które jego zdaniem ktoś podmienił: im mocniejszy kolor, tym większe podejrzenie. Najedź na słowo, żeby zobaczyć procent.</p>
 <form id="try-form">
 <textarea id="try-text" rows="3" spellcheck="false" autocomplete="off">__FIRST__</textarea>
 <div class="try-row">
@@ -39,6 +56,12 @@ BOX = """<section class="try">
 </div>
 </form>
 <div id="try-out" class="try-out" hidden><p class="s" id="try-res"></p><p class="meta" id="try-top"></p></div>
+</section>
+<section class="guide">
+<h2>Jak testować</h2>
+<p class="intro">Pięć prób po kolei. „Wstaw i sprawdź” wkleja przykład do pola wyżej i od razu go liczy, potem zmieniaj go po swojemu.</p>
+<ol class="steps">__GUIDE__</ol>
+<p class="note">Model ocenia każde słowo osobno: czy pasuje do reszty tekstu. Nie sprawdzaj go na polskim (zna tylko angielski), na dwóch-trzech słowach bez zdania ani na gramatyce całego zdania. Do decyzji z procentami dopiero go doszkolimy, to jest tylko jego podstawowa umiejętność z pretrainingu.</p>
 </section>
 <style>
 .try { margin:0 0 56px; }
@@ -51,6 +74,15 @@ BOX = """<section class="try">
 .ex { font:13px/1.25 -apple-system, BlinkMacSystemFont, sans-serif; color:var(--ink); background:var(--card); border:0; border-radius:999px; padding:7px 12px; cursor:pointer; text-align:left; }
 .try-out { background:var(--card); border-radius:16px; padding:18px 20px; margin:16px 0 0; }
 .try-out .s { white-space:pre-wrap; line-height:1.7; }
+.steps { list-style:none; padding:0; margin:0 0 18px; display:grid; gap:10px; }
+.steps li { display:grid; grid-template-columns:32px 1fr; gap:4px 12px; background:var(--card); border-radius:16px; padding:16px 18px; }
+.steps .n { font:700 20px/1.3 -apple-system, "SF Pro Display", sans-serif; color:var(--mute); font-variant-numeric:tabular-nums; }
+.steps h3 { font:600 17px/1.3 -apple-system, "SF Pro Display", sans-serif; margin:0 0 2px; }
+.steps p { margin:0; font-size:15px; }
+.steps .good { color:var(--mute); margin:4px 0 0; }
+.steps .ex { margin:10px 0 0; background:#fff; }
+.steps .ex:active { transform:scale(.97); }
+.ex { transition:transform 120ms cubic-bezier(.165, .84, .44, 1); }
 </style>
 <script>
 (() => {
@@ -86,7 +118,11 @@ BOX = """<section class="try">
   }
   form.addEventListener('submit', e => { e.preventDefault(); run(); });
   box.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); run(); } });
-  document.querySelectorAll('.ex').forEach(b => b.addEventListener('click', () => { box.value = b.textContent; run(); }));
+  document.querySelectorAll('.ex').forEach(b => b.addEventListener('click', () => {
+    box.value = b.dataset.t || b.textContent;
+    if (b.dataset.t) form.scrollIntoView({behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start'});
+    run();
+  }));
 })();
 </script>
 """
@@ -158,7 +194,12 @@ def main():
     m = Model(a.ckpt, a.prep / "tokenizer.json", a.threads)
     score = Scorer(m, np.memmap(a.prep / "decide_val.bin", dtype=np.uint16, mode="r"))
     chips = "".join(f'<button type="button" class="ex">{e}</button>' for e in EXAMPLES[:-1])
-    box = BOX.replace("__FIRST__", EXAMPLES[-1]).replace("__EXAMPLES__", chips)
+    steps = "".join(
+        f'<li><div class="n">{i}</div><div><h3>{title}</h3><p>{what}</p><p class="good">Dobry wynik: {good}</p>'
+        + (f'<button type="button" class="ex" data-t="{html.escape(text)}">Wstaw i sprawdź</button>' if text else "")
+        + "</div></li>"
+        for i, (title, what, good, text) in enumerate(GUIDE, 1))
+    box = BOX.replace("__FIRST__", EXAMPLES[-1]).replace("__EXAMPLES__", chips).replace("__GUIDE__", steps)
     page = a.page.read_text(encoding="utf-8").replace("<section>", box + "\n<section>", 1).replace(*FOOTER).encode()
     srv = ThreadingHTTPServer(("127.0.0.1", a.port), make_handler(page, score))
     print(f"Fajfuzzy demo (step {m.step}) on http://127.0.0.1:{a.port}", flush=True)
