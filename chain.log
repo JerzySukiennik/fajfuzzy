@@ -42,3 +42,6 @@
 [2026-11-01 12:04] fajfuzzy-s5 ended at step 35052/36000
 [2026-11-01 12:04] push fajfuzzy-s6: Kernel version 1 successfully pushed.  Please check progress at https://www.kaggle.com/code/jerzysukienik/fajfuzzy-s6
 [2026-11-01 12:04] fajfuzzy-s6 gets 7.2 h (quota factor 1.03)
+[2026-11-01 13:58] fajfuzzy-s6: used 1.74 h of quota for a 7.2 h session -> factor 1.0
+[2026-11-01 13:58] fajfuzzy-s6 ended at step 36000/36000
+[2026-11-01 13:58] pretraining finished in fajfuzzy-s6, disc.pt is in its output
