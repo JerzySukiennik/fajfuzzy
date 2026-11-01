@@ -30,19 +30,22 @@ FOOTER = ("Na pojedynczych, krótkich zdaniach jeszcze nie działa: w pretrainin
           "dwa prawdziwe akapity z walidacji. Bez tego na pojedynczym zdaniu nic by nie zaznaczył.")
 
 GUIDE = [
-    ("Czysty tekst", "Prawdziwe zdanie bez błędu.", "Prawie nic nie świeci, żadne słowo nie przekracza ok. 30%.",
+    ("Czysty tekst", "Prawdziwe zdanie bez błędu.",
+     "prawie nic nie świeci, żadne słowo nie przekracza ok. 30%. Blade plamy są normalne.",
      "The printer finished the part in three hours, so we could test it before dinner."),
     ("Homofon", "Słowo, które brzmi tak samo: would → wood, buy → by, three → tree.",
-     "Podmienione słowo stoi pierwsze na liście najbardziej podejrzanych.",
+     "podmienione słowo jest pierwsze na liście najbardziej podejrzanych. Sąsiad też może świecić, "
+     "bo „tree hours” razem nie pasuje, a model nie zawsze wie, które z dwóch słów jest złe.",
      "The printer finished the part in tree hours, so we could test it before dinner."),
     ("Słowo nie z tej bajki", "Prawdziwe słowo, ale bez sensu w tym miejscu.",
-     "Świeci mocno, bo model wie, co zwykle stoi w takim zdaniu.",
+     "świeci okolica błędu, niekoniecznie samo słowo. Tutaj model oskarża „cup” i „drank”, a „bread” "
+     "dostaje mało: widzi, że coś nie gra, ale nie wie, co dopisano na końcu.",
      "After school she drank a cup of hot bread and started her homework."),
     ("Zły fakt", "Zdanie poprawne językowo, tylko nieprawdziwe.",
-     "Czasem złapie, czasem nie: model zna statystykę tekstu, nie encyklopedię.",
+     "raczej nie złapie. Model zna statystykę tekstu, nie encyklopedię: „Germany” dostaje ok. 20%.",
      "Paris is the capital of Germany and lies on the river Seine."),
     ("Przed i po", "Twoje własne zdanie: sprawdź czyste, podmień jedno słowo, sprawdź znowu.",
-     "Liczy się różnica: podmienione słowo wyskakuje ponad resztę.", ""),
+     "liczy się różnica. Podmienione słowo albo jego najbliższy sąsiad wyskakuje ponad resztę.", ""),
 ]
 
 BOX = """<section class="try">
@@ -195,7 +198,7 @@ def main():
     score = Scorer(m, np.memmap(a.prep / "decide_val.bin", dtype=np.uint16, mode="r"))
     chips = "".join(f'<button type="button" class="ex">{e}</button>' for e in EXAMPLES[:-1])
     steps = "".join(
-        f'<li><div class="n">{i}</div><div><h3>{title}</h3><p>{what}</p><p class="good">Dobry wynik: {good}</p>'
+        f'<li><div class="n">{i}</div><div><h3>{title}</h3><p>{what}</p><p class="good">Czego się spodziewać: {good}</p>'
         + (f'<button type="button" class="ex" data-t="{html.escape(text)}">Wstaw i sprawdź</button>' if text else "")
         + "</div></li>"
         for i, (title, what, good, text) in enumerate(GUIDE, 1))
