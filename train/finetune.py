@@ -127,8 +127,8 @@ def tokenize(tok_path, source, max_len, limit=0, workers=0):
 
 
 def batches(items, budget, shuffle):
-    """Length-sorted batches under a token budget; shuffled ones start with the longest rows, so
-    running out of GPU memory shows on the first step."""
+    """Length-sorted batches under a token budget; shuffled ones start with the batch that needs
+    the most attention memory, so running out of GPU memory shows on the first step."""
     order = sorted(range(len(items)), key=lambda i: len(items[i][0]))
     out, cur, longest = [], [], 0
     for i in order:
@@ -141,9 +141,9 @@ def batches(items, budget, shuffle):
     if cur:
         out.append(cur)
     if shuffle and out:
-        last = out.pop()
+        worst = out.pop(max(range(len(out)), key=lambda k: len(out[k]) * len(items[out[k][-1]][0]) ** 2))
         random.shuffle(out)
-        out.insert(0, last)
+        out.insert(0, worst)
     return out
 
 
