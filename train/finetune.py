@@ -11,6 +11,8 @@ the small ones. JevBench (--jev) is only ever scored, never trained on or used t
 checkpoint; the best checkpoint is the one with the best mean accuracy across val sources.
 
     python train/finetune.py --init disc.pt --tokenizer tokenizer.json --data prep --jev jevbench --out run
+
+--init takes the pretrained disc.pt, or an earlier decider.pt to keep fine-tuning it on new data.
 """
 
 import argparse
@@ -57,7 +59,7 @@ def jev_row(r, tier):
         text = q["instructions"]
         if crit:
             text += f" Yes means: {crit.get('true')} No means: {crit.get('false')}"
-        return {"src": f"jev/{tier}", "kind": "noul", "question": text, "state": state,
+        return {"src": f"jev/{tier}/noul", "kind": "noul", "question": text, "state": state,
                 "options": ["No", "Yes"], "target": [float(r["expected"] != "yes"), float(r["expected"] == "yes")]}
     if isinstance(crit, dict):
         options = [crit.get(label) or label for label in labels]
@@ -65,12 +67,17 @@ def jev_row(r, tier):
         options = crit
     else:
         options = labels
-    return {"src": f"jev/{tier}", "kind": q["type"], "question": q["instructions"], "state": state,
+    return {"src": f"jev/{tier}/{q['type']}", "kind": q["type"], "question": q["instructions"], "state": state,
             "options": options, "target": [float(str(label) == str(r["expected"])) for label in labels]}
 
 
 def jevbench(folder):
     return [jev_row(r, tier) for tier in ("original", "easy", "hard") for r in rows(Path(folder) / f"{tier}.jsonl")]
+
+
+def load_init(path):
+    ck = torch.load(str(path), map_location="cpu", weights_only=False)
+    return Decider.from_disc(path) if "rtd_dense.weight" in ck["weights"] else Decider.from_file(path)
 
 
 def _load_tokenizer(path):
@@ -201,7 +208,7 @@ def export(path, model, step, meta):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--init", type=Path, required=True, help="disc.pt from pretraining")
+    ap.add_argument("--init", type=Path, required=True, help="disc.pt from pretraining or a decider.pt")
     ap.add_argument("--tokenizer", type=Path, required=True)
     ap.add_argument("--data", type=Path, required=True)
     ap.add_argument("--jev", type=Path, help="folder with JevBench original/easy/hard.jsonl")
@@ -237,7 +244,7 @@ def main():
         print(f"train {s}: {len(items):,} (epoch takes {min(len(items), a.cap):,})", flush=True)
     print(f"val {len(val):,}, jevbench {len(jev)}, tokenized in {time.time() - t0:.0f} s", flush=True)
 
-    model = Decider.from_disc(a.init).to(device)
+    model = load_init(a.init).to(device)
     if device == "cuda" and torch.cuda.device_count() > 1:
         model = torch.nn.DataParallel(model)
     opt = torch.optim.AdamW(param_groups(model, a.lr, a.head_lr, a.layer_decay, a.weight_decay), betas=(0.9, 0.98), eps=1e-6)
