@@ -2,7 +2,7 @@
  "where": {},
  "top": 0,
  "blocked": {
-  "jerzysukiennik": "busy: jerzysukiennik/gcode-finetune, jerzysukiennik/fajfuzzy-ft"
+  "jerzysukiennik": "busy: jerzysukiennik/fajfuzzy-ft"
  },
  "factor": {}
 }
