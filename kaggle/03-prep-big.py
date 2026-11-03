@@ -22,7 +22,13 @@ subprocess.run(["git", "clone", "--depth", "1", REPO, SRC], check=True)
 os.chdir(SRC)
 subprocess.run([sys.executable, "-m", "pip", "install", "-q", "tokenizers", "pyarrow"], check=True)
 
-tok = sorted(glob.glob("/kaggle/input/**/tokenizer.json", recursive=True))
+try:
+    from kaggle_secrets import UserSecretsClient
+    os.environ["HF_TOKEN"] = UserSecretsClient().get_secret("HF_TOKEN")
+except Exception:
+    pass
+
+tok =sorted(glob.glob("/kaggle/input/**/tokenizer.json", recursive=True))
 assert tok, "tokenizer.json not found: attach the fajfuzzy-decider-v1 dataset"
 shutil.copy(tok[0], f"{WORK}/tokenizer.json")
 
