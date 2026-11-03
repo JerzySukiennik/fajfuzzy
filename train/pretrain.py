@@ -8,6 +8,9 @@ the run switches from 512 to 2048 tokens of context at the same tokens per step.
     python train/pretrain.py --data /kaggle/input/.../decide --out run1 --max-hours 10.5
     python train/pretrain.py --data ... --out run1 --resume --max-hours 10.5
     python train/pretrain.py --random-data --probe --max-steps 8 --batch-size 64 --grad-accum 4
+
+--init starts a new schedule from given weights (tools/grow.py's grown v1) instead of random
+ones; --expect-step makes a resumed session refuse a checkpoint older than the chain expects.
 """
 
 import argparse
@@ -115,6 +118,9 @@ def main():
     ap.add_argument("--random-data", action="store_true")
     ap.add_argument("--out", type=Path, default=Path("checkpoints/run1"))
     ap.add_argument("--resume", action="store_true")
+    ap.add_argument("--init", type=Path, help="weights and config to start from (tools/grow.py output)")
+    ap.add_argument("--expect-step", type=int, default=0)
+    ap.add_argument("--n-layer", type=int, default=0, help="discriminator depth for a fresh model or a probe")
     ap.add_argument("--max-steps", type=int, default=36000)
     ap.add_argument("--warmup", type=int, default=1500)
     ap.add_argument("--lr", type=float, default=5e-4)
@@ -148,8 +154,13 @@ def main():
             if k in ck["args"]:
                 setattr(args, k, ck["args"][k])
         cfg = Config(**ck["config"])
+    elif args.init:
+        init = torch.load(args.init, map_location="cpu", weights_only=False)
+        cfg = Config(**init["config"])
     else:
         cfg = Config(**TINY) if args.tiny else Config()
+        if args.n_layer:
+            cfg.n_layer = args.n_layer
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
     fp16 = device == "cuda" and torch.cuda.get_device_capability()[0] < 8
@@ -177,6 +188,12 @@ def main():
         step, tokens = ck["step"], ck.get("tokens", 0)
         print(f"resumed at step {step}, {tokens/1e9:.3f}B tokens seen", flush=True)
         del ck
+        if step < args.expect_step:
+            raise SystemExit(f"checkpoint is at step {step}, the chain expects at least {args.expect_step}")
+    elif args.init:
+        model.load_state_dict(init["model"])
+        print(f"started from {args.init} ({cfg.n_layer} layers, grown from step {init.get('grown_from', {}).get('step')})", flush=True)
+        del init
 
     n_gpu = torch.cuda.device_count() if device == "cuda" and not args.single_gpu else 1
     if n_gpu > 1:

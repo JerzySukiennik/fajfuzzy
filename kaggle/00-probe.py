@@ -2,7 +2,8 @@
 
 Runs the actual training step (DataParallel, fp16, generator plus discriminator) on random
 tokens at 512 and 2048 tokens of context for every micro-batch that fits, at the run's
-131,072 tokens per optimiser step. The numbers set the step budget of the real run.
+131,072 tokens per optimiser step. The numbers set the step budget of the real run. v1 was
+measured with N_LAYER = 12, the grown model with 24.
 """
 
 import json
@@ -13,17 +14,18 @@ import sys
 REPO = "https://github.com/JerzySukiennik/fajfuzzy.git"
 SRC = "/tmp/fajfuzzy"
 TOKENS_PER_STEP = 131072
+N_LAYER = 24
 
 subprocess.run(["git", "clone", "--depth", "1", REPO, SRC], check=True)
 os.chdir(SRC)
 
 results = []
-for block, sizes in ((512, (128, 96, 64, 48, 32)), (2048, (32, 24, 16, 8))):
+for block, sizes in ((512, (64, 48, 32, 24, 16)), (2048, (16, 8, 4))):
     for size in sizes:
         accum = max(1, TOKENS_PER_STEP // (size * block))
         r = subprocess.run([sys.executable, "train/pretrain.py", "--random-data", "--probe", "--max-steps", "8",
                             "--block", str(block), "--long-from", "1.0", "--batch-size", str(size),
-                            "--grad-accum", str(accum), "--out", "/tmp/probe"],
+                            "--grad-accum", str(accum), "--n-layer", str(N_LAYER), "--out", "/tmp/probe"],
                            capture_output=True, text=True)
         line = [l for l in r.stdout.splitlines() if l.startswith("PROBE ")]
         if r.returncode == 0 and line:
