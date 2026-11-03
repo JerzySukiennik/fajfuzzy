@@ -71,6 +71,7 @@ def main():
     ap.add_argument("--threads", type=int, default=0)
     ap.add_argument("--warmup", type=int, default=5)
     ap.add_argument("--limit", type=int, default=0, help="first N items per split, for a smoke test")
+    ap.add_argument("--name", default="fajfuzzy-v1")
     a = ap.parse_args()
 
     sys.path.insert(0, str(a.jevbench.resolve()))
@@ -81,7 +82,7 @@ def main():
 
     torch.set_num_threads(a.threads or os.cpu_count() or 1)
     step = torch.load(str(a.model), map_location="cpu", weights_only=False).get("step")
-    adapter = FajfuzzyAdapter(a.model, a.tokenizer, a.max_len, f"fajfuzzy-v1 ({a.model.name}, step {step})")
+    adapter = FajfuzzyAdapter(a.model, a.tokenizer, a.max_len, f"{a.name} ({a.model.name}, step {step})")
     files = {split: a.jevbench / "datasets" / "public" / f"{split}.jsonl" for split in SPLITS}
     tasks = {split: load_jsonl(str(path))[:a.limit or None] for split, path in files.items()}
     every = [t for split in SPLITS for t in tasks[split]]

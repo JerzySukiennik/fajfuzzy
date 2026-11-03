@@ -5,7 +5,9 @@ Input layout (ids from the tokenizer's special block):
     <|cls|> <|question|> question <|state|> state <|options|>
         <|opt|> name <|criteria|> criteria ... <|sep|>
 The head starts from the pretraining RTD head, so fine-tuning begins with a projection that
-already reads every position of the encoder.
+already reads every position of the encoder. Yes/no decisions are two options built by yes_no:
+the model weighs each option by its own text against the state and barely reads the question,
+so the claim being judged travels with "Yes".
 """
 
 import torch
@@ -54,7 +56,13 @@ class Decider(nn.Module):
         return logits.masked_fill(ids != OPT, float("-inf"))
 
 
-def encode(tok, question, state, options, criteria=None, max_len=512, crit_cap=48, question_cap=160):
+def yes_no(claim, true=None, false=None):
+    """Options of a yes/no decision, No first: "No: <false>" and "Yes: <claim> <true>"."""
+    yes = " ".join(s.strip() for s in (claim, true) if s and s.strip())
+    return [f"No: {false.strip()}" if false and false.strip() else "No", f"Yes: {yes}" if yes else "Yes"]
+
+
+def encode(tok, question, state, options, criteria=None, max_len=512, crit_cap=48, question_cap=160, name_cap=128):
     """Token ids for one decision. Options always fit; the state takes what is left, keeping its
     first two thirds and last third when it is too long."""
     ids = lambda s: tok.encode(s).ids if s else []
@@ -64,7 +72,7 @@ def encode(tok, question, state, options, criteria=None, max_len=512, crit_cap=4
         state = state[:chars * 2 // 3] + state[-(chars // 3):]
     tail = [OPTIONS]
     for name, crit in zip(options, criteria):
-        tail += [OPT] + ids(str(name))[:64]
+        tail += [OPT] + ids(str(name))[:name_cap]
         if crit:
             tail += [CRITERIA] + ids(str(crit))[:crit_cap]
     tail.append(SEP)

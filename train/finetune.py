@@ -32,7 +32,7 @@ import torch
 from tokenizers import Tokenizer
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from model.decider import OPT, PAD, Decider, encode, soft_loss  # noqa: E402
+from model.decider import OPT, PAD, Decider, encode, soft_loss, yes_no  # noqa: E402
 
 _tok = None
 
@@ -50,17 +50,17 @@ def rows(path):
 
 
 def jev_row(r, tier):
-    """A JevBench item in the training layout: yes/no criteria folded into the question, choice
-    and scale options shown by their criteria text, the way tasksource presents them."""
+    """A JevBench item in the training layout: yes/no as the two yes_no options with the question
+    and criteria in them, choice and scale options shown by their criteria text, the way
+    tasksource presents them."""
     q, labels = r["question"], r["labels"]
     crit = q.get("criteria")
     state = r["state"] if isinstance(r["state"], str) else json.dumps(r["state"], ensure_ascii=False)
     if q["type"] == "noul":
-        text = q["instructions"]
-        if crit:
-            text += f" Yes means: {crit.get('true')} No means: {crit.get('false')}"
-        return {"src": f"jev/{tier}/noul", "kind": "noul", "question": text, "state": state,
-                "options": ["No", "Yes"], "target": [float(r["expected"] != "yes"), float(r["expected"] == "yes")]}
+        crit = crit if isinstance(crit, dict) else {}
+        return {"src": f"jev/{tier}/noul", "kind": "noul", "question": q["instructions"], "state": state,
+                "options": yes_no(q["instructions"], crit.get("true"), crit.get("false")),
+                "target": [float(r["expected"] != "yes"), float(r["expected"] == "yes")]}
     if isinstance(crit, dict):
         options = [crit.get(label) or label for label in labels]
     elif isinstance(crit, list) and len(crit) == len(labels):

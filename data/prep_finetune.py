@@ -13,14 +13,18 @@ Two parts:
   more labelled controls from the same window become extra steps (source ...-extra).
 
 v1.1 adds three rewrites of the same rows, all built by rule from their human labels:
-- yn/...: choice rows asked as yes/no with the criteria spelled out ("Yes means ... No means
-  ..."), the way Jev frames noul decisions. v1 saw yes/no almost only as UNLI and synthetic
+- yn/...: choice rows asked as yes/no with the criteria spelled out, the way Jev frames noul
+  decisions. v1 saw yes/no almost only as UNLI and synthetic
   puzzles and answered "yes" to 62% of JevBench yes/no items. Half the rewrites ask about the
   right option and half about a wrong one, and some flip the polarity ("Should X be rejected?").
 - trap/...: banking77 and clinc intents with a second intent mentioned only to rule it out ("I'm
   not asking about card arrival."), as a choice with a "none of these" option and as yes/no.
 - gui/...-neg and gui/...-none: steps that name an element not to click ("Don't click Save."),
   and steps whose element is not on screen, answered with "none of these".
+
+v1.2 shows every yes/no decision as two options from model.decider.yes_no, "No: <criteria>" and
+"Yes: <question or claim> <criteria>". v1.1 put the criteria in the question and learned nothing
+from them (val loss stayed at ln 2): the model reads the options, not the question.
 
     python data/prep_finetune.py --jev jevbench-public --out prep
 """
@@ -32,6 +36,7 @@ import hashlib
 import json
 import random
 import re
+import sys
 import tempfile
 from collections import Counter
 from concurrent.futures import ThreadPoolExecutor
@@ -40,6 +45,9 @@ from pathlib import Path
 import pyarrow.parquet as pq
 import yaml
 from huggingface_hub import hf_hub_download, list_repo_files
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from model.decider import yes_no  # noqa: E402
 
 TS = "tasksource/tasksource-jev-typed-decisions"
 GUI = "macpaw-research/GUIrilla-Task"
@@ -115,7 +123,7 @@ def ts_row(r):
     if r["kind"] == "noul":
         if len(target) != 1 or not 0 <= target[0] <= 1:
             return None
-        options, target = ["No", "Yes"], [1 - target[0], target[0]]
+        options, target = yes_no(r["question"]), [1 - target[0], target[0]]
     else:
         options = [str(o) for o in r["options"]]
         if len(options) < 2 or len(options) != len(target) or sum(target) <= 0:
@@ -124,9 +132,9 @@ def ts_row(r):
             "options": options, "target": target}
 
 
-def noul(src, question, state, yes, true, false):
-    return {"src": src, "kind": "noul", "question": f"{question} Yes means: {true} No means: {false}", "state": state,
-            "options": ["No", "Yes"], "target": [1 - yes, yes]}
+def noul(src, question, state, yes, true, false, claim=None):
+    return {"src": src, "kind": "noul", "question": question, "state": state,
+            "options": yes_no(question if claim is None else claim, true, false), "target": [1 - yes, yes]}
 
 
 def yn_row(row, rng):
@@ -149,9 +157,9 @@ def yn_row(row, rng):
         state = f"{state}\n\nOptions: " + " | ".join(opts)
     if rng.random() < 0.7:
         return noul(src, f"{q} Is “{name}” the right answer?", state, p, f"“{name}” is the right answer.",
-                    "another answer is right.")
+                    "another answer is right.", "")
     return noul(src, f"{q} Should “{name}” be rejected?", state, 1 - p, f"“{name}” is not the right answer.",
-                f"“{name}” is the right answer.")
+                f"“{name}” is the right answer.", "")
 
 
 def human(label):
