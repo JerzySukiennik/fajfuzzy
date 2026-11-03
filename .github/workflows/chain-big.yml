@@ -1,0 +1,67 @@
+# Grown Fajfuzzy pretraining chain in the cloud, across both Kaggle accounts: one turn of tools/chain_big.py per run, state on the chain-big-state branch; each run dispatches the next 10 minutes later, the cron is only a backup.
+name: chain-big
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: chain-big
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  turn:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    env:
+      TZ: Europe/Warsaw
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          ref: chain-big-state
+          path: state
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -q kaggle==2.2.4 six
+      - name: Kaggle credentials
+        env:
+          KAGGLE_TOKEN: ${{ secrets.KAGGLE_TOKEN }}
+          KAGGLE_TOKEN_MAIN: ${{ secrets.KAGGLE_TOKEN_MAIN }}
+        run: |
+          mkdir -p ~/.kaggle-gdev ~/.kaggle-main
+          printf '%s' jerzysukienik > ~/.kaggle-gdev/username
+          printf '%s' "$KAGGLE_TOKEN" > ~/.kaggle-gdev/access_token
+          printf '%s' jerzysukiennik > ~/.kaggle-main/username
+          printf '%s' "$KAGGLE_TOKEN_MAIN" > ~/.kaggle-main/access_token
+          chmod 600 ~/.kaggle-gdev/access_token ~/.kaggle-main/access_token
+      - name: One turn of the chain
+        run: python tools/chain_big.py --once --state state/state.json
+      - name: Save state
+        if: always()
+        working-directory: state
+        run: |
+          git config user.name "fajfuzzy-chain"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet || { git commit -qm "Chain turn $(date '+%F %H:%M')" && git push -q; }
+      - name: Stop when finished
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ -e state/DONE ] || [ -e state/STOP ]; then gh workflow disable chain-big.yml --repo "$GITHUB_REPOSITORY"; fi
+      - name: Next turn
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ -e state/DONE ] || [ -e state/STOP ]; then exit 0; fi
+          sleep 600
+          gh workflow run chain-big.yml --repo "$GITHUB_REPOSITORY"
