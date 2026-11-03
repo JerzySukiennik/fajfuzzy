@@ -8,7 +8,8 @@
 Whole parquet shards download in the background while the previous one is filtered,
 which is far faster on Kaggle than streaming. Documents are separated by a line holding
 only DOC_SEP, exact duplicates (ignoring whitespace) are dropped, and finished shards are
-recorded so a rerun resumes.
+recorded so a rerun resumes. --reverse walks every source from the other end, which gives
+a second slice that shares no shard with the first run's.
 
     python data/fetch_corpus.py edu --out /tmp/fajfuzzy/corpus_edu.txt --max-chars 12e9
 """
@@ -107,11 +108,13 @@ def list_parquet(repo, folder):
         return sorted(x["path"] for x in json.load(r) if x["path"].endswith(".parquet"))
 
 
-def fetch_parquet(source, sink):
+def fetch_parquet(source, sink, reverse=False):
     import pyarrow.parquet as pq
     repo, folder, min_chars = PARQUET[source]
     files = list_parquet(repo, folder)
     random.Random(7).shuffle(files)
+    if reverse:
+        files.reverse()
     files = [f for f in files if f not in sink.done]
     raw = Path(f"{sink.out}.raw")
     raw.mkdir(exist_ok=True)
@@ -154,8 +157,8 @@ def keep_html(text, path):
     return text.count("base64,") <= 3
 
 
-def fetch_html(sink):
-    for url in HTML_SHARDS:
+def fetch_html(sink, reverse=False):
+    for url in (HTML_SHARDS[::-1] if reverse else HTML_SHARDS):
         key = url.rsplit("/", 1)[-1]
         if key in sink.done or sink.full():
             continue
@@ -186,13 +189,14 @@ if __name__ == "__main__":
     ap.add_argument("source", choices=list(PARQUET) + ["html"])
     ap.add_argument("--out", type=Path, required=True)
     ap.add_argument("--max-chars", type=float, required=True)
+    ap.add_argument("--reverse", action="store_true")
     a = ap.parse_args()
     a.out.parent.mkdir(parents=True, exist_ok=True)
     sink = Sink(a.out, a.max_chars)
     log(f"{a.source}: target {a.max_chars / 1e9:.2f}G chars, already {sink.chars / 1e9:.2f}G")
     if a.source == "html":
-        fetch_html(sink)
+        fetch_html(sink, a.reverse)
     else:
-        fetch_parquet(a.source, sink)
+        fetch_parquet(a.source, sink, a.reverse)
     sink.close()
     log(f"{a.source}: finished at {sink.chars / 1e9:.2f}G chars")
