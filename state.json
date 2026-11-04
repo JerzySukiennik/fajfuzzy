@@ -1,8 +1,15 @@
 {
- "where": {},
- "top": 0,
- "blocked": {
-  "jerzysukiennik": "busy: jerzysukiennik/fajfuzzy-ft"
+ "where": {
+  "fajfuzzy-big-s1": "jerzysukiennik"
  },
- "factor": {}
+ "top": 0,
+ "factor": {},
+ "launch": {
+  "name": "fajfuzzy-big-s1",
+  "account": "jerzysukiennik",
+  "hours": 11.0,
+  "used": 13.22,
+  "ts": 1793755287.44837,
+  "measured": false
+ }
 }
