@@ -1,15 +1,21 @@
 {
  "where": {
-  "fajfuzzy-big-s1": "jerzysukiennik"
+  "fajfuzzy-big-s1": "jerzysukiennik",
+  "fajfuzzy-big-s2": "jerzysukiennik"
  },
  "top": 1,
- "factor": {},
+ "factor": {
+  "jerzysukiennik": 1.03
+ },
  "launch": {
-  "name": "fajfuzzy-big-s1",
+  "name": "fajfuzzy-big-s2",
   "account": "jerzysukiennik",
-  "hours": 11.0,
-  "used": 13.22,
-  "ts": 1793755287.44837,
+  "hours": 5.0,
+  "used": 24.24,
+  "ts": 1793795149.1473517,
   "measured": false
+ },
+ "steps": {
+  "fajfuzzy-big-s1": 3968
  }
 }
