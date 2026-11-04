@@ -5,7 +5,7 @@
  },
  "top": 2,
  "factor": {
-  "jerzysukiennik": 1.03
+  "jerzysukiennik": 1.0
  },
  "launch": {
   "name": "fajfuzzy-big-s2",
@@ -13,9 +13,14 @@
   "hours": 5.0,
   "used": 24.24,
   "ts": 1793795149.1473517,
-  "measured": false
+  "measured": true
  },
  "steps": {
-  "fajfuzzy-big-s1": 3968
+  "fajfuzzy-big-s1": 3968,
+  "fajfuzzy-big-s2": 5790
+ },
+ "blocked": {
+  "jerzysukiennik": "no quota",
+  "jerzysukienik": "no quota"
  }
 }
