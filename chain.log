@@ -19,3 +19,6 @@
 [2026-11-07 23:10] waiting: jerzysukiennik data prep NONE
 [2026-11-07 23:20] push jerzysukiennik/fajfuzzy-big-s4: Kernel version 2 successfully pushed.  Please check progress at https://www.kaggle.com/code/jerzysukiennik/fajfuzzy-big-s4
 [2026-11-07 23:20] fajfuzzy-big-s4 on jerzysukiennik: 7.1 h from step 10066
+[2026-11-08 06:37] fajfuzzy-big-s4: used 7.12 h on jerzysukiennik for 7.1 h -> factor 1.02
+[2026-11-08 06:37] fajfuzzy-big-s4 (jerzysukiennik) ended at step 12865/44000
+[2026-11-08 06:39] upload of fajfuzzy-big-s4 to jerzysukienik/fajfuzzy-big-ckpt: 100%|██████████| 2.58G/2.58G [00:28<00:00, 97.0MB/s]
