@@ -22,3 +22,6 @@
 [2026-11-08 06:37] fajfuzzy-big-s4: used 7.12 h on jerzysukiennik for 7.1 h -> factor 1.02
 [2026-11-08 06:37] fajfuzzy-big-s4 (jerzysukiennik) ended at step 12865/44000
 [2026-11-08 06:39] upload of fajfuzzy-big-s4 to jerzysukienik/fajfuzzy-big-ckpt: 100%|██████████| 2.58G/2.58G [00:28<00:00, 97.0MB/s]
+[2026-11-08 06:49] carried fajfuzzy-big-s4 (step 12865) to jerzysukienik
+[2026-11-08 06:49] push jerzysukienik/fajfuzzy-big-s5: Kernel version 1 successfully pushed.  Please check progress at https://www.kaggle.com/code/jerzysukienik/fajfuzzy-big-s5
+[2026-11-08 06:49] fajfuzzy-big-s5 on jerzysukienik: 11.0 h from step 12865
