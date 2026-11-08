@@ -25,3 +25,7 @@
 [2026-11-08 06:49] carried fajfuzzy-big-s4 (step 12865) to jerzysukienik
 [2026-11-08 06:49] push jerzysukienik/fajfuzzy-big-s5: Kernel version 1 successfully pushed.  Please check progress at https://www.kaggle.com/code/jerzysukienik/fajfuzzy-big-s5
 [2026-11-08 06:49] fajfuzzy-big-s5 on jerzysukienik: 11.0 h from step 12865
+[2026-11-08 17:55] fajfuzzy-big-s5: used 11.02 h on jerzysukienik for 11.0 h -> factor 1.03
+[2026-11-08 17:55] fajfuzzy-big-s5 (jerzysukienik) ended at step 16855/44000
+[2026-11-08 17:55] push jerzysukienik/fajfuzzy-big-s6: Kernel version 1 successfully pushed.  Please check progress at https://www.kaggle.com/code/jerzysukienik/fajfuzzy-big-s6
+[2026-11-08 17:55] fajfuzzy-big-s6 on jerzysukienik: 11.0 h from step 16855

@@ -4,25 +4,28 @@
   "fajfuzzy-big-s2": "jerzysukiennik",
   "fajfuzzy-big-s3": "jerzysukiennik",
   "fajfuzzy-big-s4": "jerzysukiennik",
-  "fajfuzzy-big-s5": "jerzysukienik"
+  "fajfuzzy-big-s5": "jerzysukienik",
+  "fajfuzzy-big-s6": "jerzysukienik"
  },
  "top": 5,
  "factor": {
-  "jerzysukiennik": 1.02
+  "jerzysukiennik": 1.02,
+  "jerzysukienik": 1.03
  },
  "launch": {
-  "name": "fajfuzzy-big-s5",
+  "name": "fajfuzzy-big-s6",
   "account": "jerzysukienik",
   "hours": 11.0,
-  "used": 0.0,
-  "ts": 1794116992.6492853,
+  "used": 11.02,
+  "ts": 1794156909.4298124,
   "measured": false
  },
  "steps": {
   "fajfuzzy-big-s1": 3968,
   "fajfuzzy-big-s2": 5790,
   "fajfuzzy-big-s3": 10066,
-  "fajfuzzy-big-s4": 12865
+  "fajfuzzy-big-s4": 12865,
+  "fajfuzzy-big-s5": 16855
  },
  "carry": {
   "session": "fajfuzzy-big-s4",
