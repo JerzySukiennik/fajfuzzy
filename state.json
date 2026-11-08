@@ -7,7 +7,7 @@
   "fajfuzzy-big-s5": "jerzysukienik",
   "fajfuzzy-big-s6": "jerzysukienik"
  },
- "top": 6,
+ "top": 0,
  "factor": {
   "jerzysukiennik": 1.02,
   "jerzysukienik": 1.03
@@ -33,5 +33,8 @@
   "step": 12865,
   "ts": 1794116360.8639069,
   "ready": true
+ },
+ "blocked": {
+  "jerzysukiennik": "data prep NONE"
  }
 }
