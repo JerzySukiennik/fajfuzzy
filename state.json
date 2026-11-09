@@ -11,7 +11,7 @@
  "top": 7,
  "factor": {
   "jerzysukiennik": 1.02,
-  "jerzysukienik": 1.03
+  "jerzysukienik": 1.02
  },
  "launch": {
   "name": "fajfuzzy-big-s7",
@@ -19,7 +19,7 @@
   "hours": 7.1,
   "used": 22.04,
   "ts": 1794197615.4879496,
-  "measured": false
+  "measured": true
  },
  "steps": {
   "fajfuzzy-big-s1": 3968,
@@ -27,7 +27,8 @@
   "fajfuzzy-big-s3": 10066,
   "fajfuzzy-big-s4": 12865,
   "fajfuzzy-big-s5": 16855,
-  "fajfuzzy-big-s6": 20977
+  "fajfuzzy-big-s6": 20977,
+  "fajfuzzy-big-s7": 23449
  },
  "carry": {
   "session": "fajfuzzy-big-s3",
@@ -35,5 +36,9 @@
   "step": 10066,
   "ts": 1794161384.604487,
   "ready": false
+ },
+ "blocked": {
+  "jerzysukienik": "no quota",
+  "jerzysukiennik": "no quota"
  }
 }
