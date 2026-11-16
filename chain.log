@@ -62,3 +62,6 @@
 [2026-11-16 05:13] fajfuzzy-big-s12 (jerzysukiennik) ended at step 42711/44000
 [2026-11-16 05:13] push jerzysukiennik/fajfuzzy-big-s13: Kernel version 1 successfully pushed.  Please check progress at https://www.kaggle.com/code/jerzysukiennik/fajfuzzy-big-s13
 [2026-11-16 05:13] fajfuzzy-big-s13 on jerzysukiennik: 7.1 h from step 42711
+[2026-11-16 09:49] fajfuzzy-big-s13: used 4.52 h on jerzysukiennik for 7.1 h -> factor 1.0
+[2026-11-16 09:49] fajfuzzy-big-s13 (jerzysukiennik) ended at step 44000/44000
+[2026-11-16 09:49] pretraining finished in jerzysukiennik/fajfuzzy-big-s13, disc.pt is in its output
